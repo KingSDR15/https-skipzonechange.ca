@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DeliveryNow — Courier Landing (Demo)</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --accent: #f97316; /* orange-500 */
+      --muted: #64748b;  /* slate-500 */
+      --glass: rgba(255,255,255,0.7);
+    }
+
+    /* Loader */
+    .animate-spin-border{ border-radius:9999px; animation:spin 1s linear infinite; border-top-color: transparent; }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    /* Reveal */
+    .reveal-on-scroll { opacity:0; transform: translateY(18px) scale(.995); transition: opacity .7s cubic-bezier(.2,.9,.3,1), transform .7s cubic-bezier(.2,.9,.3,1); }
+    .reveal-on-scroll.revealed { opacity:1; transform: translateY(0) scale(1); }
+
+    /* Tilt / 3D */
+    .tilt-on-scroll { transform-origin: center center; will-change: transform; transition: transform 320ms cubic-bezier(.2,.9,.3,1); }
+    .card-hover { transition: box-shadow .28s ease, transform .28s cubic-bezier(.2,.9,.3,1); }
+    .card-hover:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 20px 40px rgba(2,6,23,0.12); }
+
+    /* Slider image smoothing */
+    img { -webkit-backface-visibility: hidden; backface-visibility: hidden; -webkit-transform: translateZ(0); transform: translateZ(0); }
+
+    /* Focus (keyboard accessible) */
+    :focus { outline: 3px solid rgba(249,115,22,0.18); outline-offset: 3px; }
+
+    /* Thumb selected */
+    .thumb-active { box-shadow: 0 6px 18px rgba(243, 243, 245, 0.08); border-color: rgba(249,115,22,0.9); }
+
+    /* Small utility to hide loader */
+    .loader-hidden { pointer-events: none; opacity: 0; transition: opacity .6s ease; }
+
+    /* Accessible reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal-on-scroll, .tilt-on-scroll, .card-hover, .animate-spin-border { transition: none !important; animation: none !important; transform: none !important; }
+    }
+
+    /* Minor polished defaults */
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-3xl { border-radius: 1.25rem; }
+    .shadow-soft { box-shadow: 0 12px 30px rgba(2,6,23,0.06); }
+  </style>
+</head>
+<body class="antialiased text-slate-900 bg-white">
+
+  <!-- LOADER -->
+  <div id="site-loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+    <div class="flex flex-col items-center gap-4">
+      <div class="w-16 h-16 rounded-full animate-spin-border border-4 border-orange-500"></div>
+      <div class="text-sm text-slate-600">Loading Skip DeliveryNow...</div>
+    </div>
+  </div>
+
+  <!-- TOP NAV -->
+  <header class="border-b bg-white relative z-40">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <!-- cleaned logo path -->
+        <img src="logo.svg.svg" alt="DeliveryNow logo" class="h-8 w-auto" />
+        <nav class="hidden lg:flex gap-6 text-sm" aria-label="Main">
+          <a href="#faqs" class="hover:underline focus:outline-none">FAQs</a>
+          <a href="https://www.skipthedishes.com/" class="hover:underline focus:outline-none">The Inside Track</a>
+          <a href="reg.html" class="bg-orange-500 text-white px-3 py-1 rounded-full focus:outline-none">Apply now</a>
+        </nav>
+      </div>
+
+      <!-- Country selector & mobile menu -->
+      <div class="flex items-center gap-3">
+        <div class="relative">
+        
+
+<!-- Interactive Country Dropdown -->
+<div class="relative">
+<!-- Interactive Country Dropdown -->
+<div class="relative">
+  <button id="country-button" class="flex items-center gap-2 border px-3 py-2 rounded-md bg-white">
+    <img id="selected-flag" src="ca.fr.svg" alt="Selected Country" class="h-4 w-4" />
+    <span id="selected-country">Canada</span>
+  </button>
+
+  <div id="country-dropdown" class="country-dropdown hidden absolute right-0 mt-2 w-48 bg-white border rounded-md shadow z-30" role="menu" aria-label="Country selector">
+    <ul class="py-2">
+      <li data-flag="ca.fr.svg" data-name="Canada" class="px-3 py-2 hover:bg-gray-50 flex items-center gap-2 cursor-pointer" role="menuitem"><img src="images/ca.fr.svg" class="h-4 w-4" />Canada</li>
+      <li data-flag="au.svg" data-name="Australia" class="px-3 py-2 hover:bg-gray-50 flex items-center gap-2 cursor-pointer" role="menuitem"><img src="images/au.svg" class="h-4 w-4" />Australia</li>
+      <li data-flag="ca.fr.svg" data-name="Canada - FR" class="px-3 py-2 hover:bg-gray-50 flex items-center gap-2 cursor-pointer" role="menuitem"><img src="images/ca.fr.svg" class="h-4 w-4" />Canada - FR</li>
+      <li data-flag="ie.svg" data-name="Ireland" class="px-3 py-2 hover:bg-gray-50 flex items-center gap-2 cursor-pointer" role="menuitem"><img src="images/ie.svg" class="h-4 w-4" />Ireland</li>
+      <li data-flag="gb.svg" data-name="Great Britain" class="px-3 py-2 hover:bg-gray-50 flex items-center gap-2 cursor-pointer" role="menuitem"><img src="images/gb.svg" class="h-4 w-4" />Great Britain</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const toggleBtn = document.getElementById("country-button");
+  const dropdown = document.getElementById("country-dropdown");
+  const selectedFlag = document.getElementById("selected-flag");
+  const selectedCountry = document.getElementById("selected-country");
+
+  // FIX: Ensure the button exists before adding events
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("hidden");
+    });
+  }
+
+  // FIX: Ensure dropdown selection works correctly
+  document.querySelectorAll("#country-dropdown li").forEach(item => {
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const flag = item.dataset.flag;
+      const name = item.dataset.name;
+
+      if (selectedFlag) selectedFlag.src = flag;
+      if (selectedCountry) selectedCountry.textContent = name;
+
+      dropdown.classList.add("hidden");
+    });
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener("click", (e) => {
+    if (!dropdown.classList.contains("hidden")) {
+      dropdown.classList.add("hidden");
+    }
+  });
+</script>
+
+
+        <button id="mobile-menu" class="lg:hidden p-2 border rounded-md" aria-label="Open menu">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main id="main" class="overflow-x-hidden">
+
+    <!-- HERO -->
+    <section class="bg-orange-500 text-white py-20">
+      <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div class="reveal-on-scroll tilt-on-scroll">
+          <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">Fast cash, flexible work</h1>
+          <p class="mt-4 text-lg text-orange-50 max-w-2xl">Make extra money fast and fit delivering around your lifestyle.</p>
+
+          <div class="mt-6 flex gap-3">
+            <a href="reg.html" class="bg-white text-orange-600 px-6 py-3 rounded-full font-semibold focus:outline-none">Apply now</a>
+            <a href="#faqs" class="border rounded-full px-4 py-3 focus:outline-none">FAQs</a>
+          </div>
+        </div>
+
+        <div class="rounded-3xl overflow-hidden shadow-2xl bg-white reveal-on-scroll tilt-on-scroll hero-card">
+          <img src="hero-main.jpg.webp
+          " alt="Courier delivering" class="w-full h-80 object-cover" loading="lazy" />
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY DELIVER -->
+    <section class="py-16">
+      <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-3xl font-bold text-center mb-10 reveal-on-scroll">Why deliver with Skip?</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Cards -->
+          <article class="flex gap-4 p-6 bg-white rounded-2xl shadow-soft reveal-on-scroll tilt-on-scroll card-hover">
+            <div class="flex-shrink-0">
+              <img src="/images/flexible.webp" alt="Flexibility" class="w-12 h-12" loading="lazy" />
+            </div>
+            <div>
+              <h3 class="font-semibold">Flexibility</h3>
+              <p class="text-sm text-slate-600 mt-2">Freedom to deliver when you want. Choose your schedule and submit run requests each week.</p>
+            </div>
+          </article>
+
+          <article class="flex gap-4 p-6 bg-white rounded-2xl shadow-soft reveal-on-scroll tilt-on-scroll card-hover">
+            <div class="flex-shrink-0">
+              <img src="instantpay.svg" alt="Instant pay" class="w-12 h-12" loading="lazy" />
+            </div>
+            <div>
+              <h3 class="font-semibold">Instant pay</h3>
+              <p class="text-sm text-slate-600 mt-2">Get paid after each delivery run, or via weekly deposits direct to your bank account.</p>
+            </div>
+          </article>
+
+          <article class="flex gap-4 p-6 bg-white rounded-2xl shadow-soft reveal-on-scroll tilt-on-scroll card-hover">
+            <div class="flex-shrink-0">
+              <img src="tips.svg" alt="Keep tips" class="w-12 h-12" loading="lazy" />
+            </div>
+            <div>
+              <h3 class="font-semibold">Keep 100% of tips</h3>
+              <p class="text-sm text-slate-600 mt-2">Earners, keepers. Whatever tips you make, you’ll pocket the full amount.</p>
+            </div>
+          </article>
+
+          <article class="flex gap-4 p-6 bg-white rounded-2xl shadow-soft reveal-on-scroll tilt-on-scroll card-hover">
+            <div class="flex-shrink-0">
+              <img src="community.svg" alt="Community" class="w-12 h-12" loading="lazy" />
+            </div>
+            <div>
+              <h3 class="font-semibold">Be part of a community</h3>
+              <p class="text-sm text-slate-600 mt-2">Join our community of couriers delivering throughout the region.</p>
+            </div>
+          </article>
+
+          <article class="flex gap-4 p-6 bg-white rounded-2xl shadow-soft reveal-on-scroll tilt-on-scroll card-hover">
+            <div class="flex-shrink-0">
+              <img src="support.svg" alt="Support" class="w-12 h-12" loading="lazy" />
+            </div>
+            <div>
+              <h3 class="font-semibold">Round-the-clock support</h3>
+              <p class="text-sm text-slate-600 mt-2">Whether you need advice or support, simply chat with us via the courier app.</p>
+            </div>
+          </article>
+
+          <article class="flex gap-4 p-6 bg-white rounded-2xl shadow-soft reveal-on-scroll tilt-on-scroll card-hover">
+            <div class="flex-shrink-0">
+              <img src="no-experience.svg" alt="No experience needed" class="w-12 h-12" loading="lazy" />
+            </div>
+            <div>
+              <h3 class="font-semibold">No experience needed</h3>
+              <p class="text-sm text-slate-600 mt-2">Making your first move? We welcome new starters with no previous experience.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tips (kept inside main flow) -->
+    <div class="max-w-7xl mx-auto px-6 mt-8">
+      <div class="bg-white p-6 rounded-xl shadow-soft flex flex-col md:flex-row gap-6 items-center reveal-on-scroll tilt-on-scroll card-hover">
+        <img src="iPhone.webp" alt="Tips to speed up" class="w-full md:w-40 h-32 object-cover rounded-lg" loading="lazy" />
+        <div class="text-left">
+          <h4 class="font-semibold">Tips to speed up your application</h4>
+          <ol class="mt-2 text-sm text-slate-700">
+            <li>1. Have your ID and licence ready to upload.</li>
+            <li>2. Fill out contact details accurately.</li>
+            <li>3. Choose a nearby delivery zone if your preferred zone is closed.</li>
+          </ol>
+          <div class="mt-4">
+            <a href="reg.html" class="bg-orange-500 text-white px-4 py-2 rounded-full inline-block focus:outline-none">Apply now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPLY CTA -->
+    <section id="apply" class="py-12 px-6">
+      <div class="max-w-4xl mx-auto text-center reveal-on-scroll">
+        <h2 href="https://www.skipthedishes.com/" class="text-2xl font-bold mb-3">Apply now</h2>
+        <p class="text-slate-700 mb-6">Complete a quick application to get started — no experience needed.</p>
+        <a class="bg-orange-500 text-white px-8 py-3 rounded-full focus:outline-none" href="#">Start application</a>
+      </div>
+    </section>
+
+    <!-- SKIP MEETS / SLIDER -->
+  <!-- Mobile-first Gallery (no phone frame) -->
+    <section id="skipmeets-mobile" class="gallery-mobile" aria-labelledby="skipmeets-mobile-title">
+    
+
+        <!-- Caption & thumbnails -->
+        <div class="gm-meta">
+            <p class="gm-disclaimer">This content was created using professional actors who have been compensated for their participation.</p>
+
+            <div id="gm-thumbs" class="gm-thumbs" role="tablist" aria-label="Gallery thumbnails">
+            <button class="gm-thumb" role="tab" aria-selected="true" data-index="0" aria-controls="gm-main">
+                <img src="meet1.webp" alt="Thumbnail 1" loading="lazy" />
+            </button>
+            <button class="gm-thumb" role="tab" aria-selected="false" data-index="1" aria-controls="gm-main">
+                <img src="meet2.webp" alt="Thumbnail 2" loading="lazy" />
+            </button>
+            <button class="gm-thumb" role="tab" aria-selected="false" data-index="2" aria-controls="gm-main">
+                <img src="meet3.webp" alt="Thumbnail 3" loading="lazy" />
+            </button>
+            <button class="gm-thumb" role="tab" aria-selected="false" data-index="3" aria-controls="gm-main">
+                <img src="meet4.webp" alt="Thumbnail 4" loading="lazy" />
+            </button>
+            </div>
+
+            <div id="gm-status" class="gm-status" aria-live="polite">Item 1 of 4</div>
+        </div>
+        </div>
+    </div>
+    </section>
+
+    <style>
+    :root {
+        --card-max: 420px;
+        --radius: 12px;
+        --accent: 36, 99, 255;
+        --muted: #64748b;
+        --shadow: 0 18px 40px rgba(2,6,23,0.08);
+        --thumb-size: 68px;
+    }
+
+    /* Layout */
+    .gm-container { max-width: var(--card-max); margin: 0 auto; padding: 2rem 1rem; }
+    .gm-title { font-size: 1.25rem; font-weight:700; text-align:center; margin:0 0 0.75rem; color:#0f172a; }
+
+    /* Card */
+    .gm-card { background: linear-gradient(180deg,#fff,#fbfbff); border-radius: var(--radius); box-shadow: var(--shadow); overflow: visible; }
+    .gm-viewport { position: relative; width:100%; height: 72vw; max-height:420px; overflow:hidden; border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); background:#111; display:flex; align-items:center; justify-content:center; }
+    .gm-main { width:100%; height:100%; object-fit:cover; display:block; transition: transform .36s cubic-bezier(.2,.9,.2,1), opacity .2s; user-select:none; }
+
+    /* Controls (overlay) */
+    .gm-control { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.92); border:none; width:44px; height:44px; border-radius:999px; display:grid; place-items:center; font-size:24px; color:#0f172a; box-shadow:0 8px 18px rgba(2,6,23,0.08); cursor:pointer; z-index:20; transition: transform .15s; }
+    .gm-control:hover { transform: translateY(-50%) scale(1.03); }
+    .gm-prev { left:10px; }
+    .gm-next { right:10px; }
+
+    /* Meta & thumbs */
+    .gm-meta { padding: 0.9rem 1rem 1.2rem; display:flex; flex-direction:column; gap:0.6rem; }
+    .gm-disclaimer { margin:0; color:var(--muted); font-size:0.95rem; text-align:center; }
+
+    .gm-thumbs { margin-top: .5rem; display:flex; gap:0.6rem; align-items:center; justify-content:center; overflow:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+    .gm-thumb { flex: 0 0 auto; width: var(--thumb-size); height: var(--thumb-size); border-radius:10px; overflow:hidden; border:1px solid rgba(15,23,42,0.06); background:#fff; padding:0; transition: transform .28s cubic-bezier(.2,.9,.2,1), box-shadow .22s, opacity .18s; cursor:pointer; }
+    .gm-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+
+    .gm-thumb[aria-selected="true"] { transform: translateY(-6px) scale(1.05); box-shadow: 0 12px 28px rgba(2,6,23,0.12); outline: 3px solid rgba(var(--accent),0.08); border-color: rgba(var(--accent),0.85); }
+
+    .gm-status { text-align:center; color:var(--muted); font-size:0.9rem; }
+
+    /* Responsive: slightly larger thumbs on wide screens */
+    @media (min-width:560px) {
+        :root { --thumb-size: 76px; }
+        .gm-viewport { height: 56vw; max-height:420px; }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .gm-main, .gm-thumb { transition: none !important; }
+    }
+    </style>
+
+    <script>
+    (function () {
+        function ready(fn){ if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+
+        ready(function () {
+        const images = [
+            { src: '/images/meet1.jpg', alt: 'Meet 1' },
+            { src: '/images/meet2.jpg', alt: 'Meet 2' },
+            { src: '/images/meet3.jpg', alt: 'Meet 3' },
+            { src: '/images/meet4.jpg', alt: 'Meet 4' }
+        ];
+
+        let current = 0;
+        const main = document.getElementById('gm-main');
+        const prev = document.getElementById('gm-prev');
+        const next = document.getElementById('gm-next');
+        const thumbs = Array.from(document.querySelectorAll('.gm-thumb'));
+        const status = document.getElementById('gm-status');
+        const viewport = document.getElementById('gm-viewport');
+
+        if (!main) return;
+
+        function show(index, animate = true) {
+            if (!images.length) return;
+            index = (index + images.length) % images.length;
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (index === current && !animate) return;
+            current = index;
+
+            if (!reduced && animate) {
+            main.style.transition = 'transform .28s ease, opacity .2s';
+            main.style.transform = 'scale(.98) translateZ(-10px)';
+            main.style.opacity = '0.72';
+            setTimeout(() => {
+                main.src = images[current].src;
+                main.alt = images[current].alt;
+                requestAnimationFrame(() => {
+                main.style.transform = 'scale(1.02) translateZ(8px)';
+                main.style.opacity = '1';
+                setTimeout(() => { main.style.transform = ''; main.style.transition = ''; }, 260);
+                });
+            }, 110);
+            } else {
+            main.src = images[current].src;
+            main.alt = images[current].alt;
+            }
+
+            thumbs.forEach((btn, i) => {
+            const selected = i === current;
+            btn.setAttribute('aria-selected', selected ? 'true' : 'false');
+            btn.tabIndex = selected ? 0 : -1;
+            // ensure active thumb remains visible on overflow
+            if (selected) btn.scrollIntoView({ inline: 'center', behavior: reduced ? 'auto' : 'smooth' });
+            });
+
+            if (status) status.textContent = `Item ${current + 1} of ${images.length}`;
+        }
+
+        // events
+        if (prev) prev.addEventListener('click', (e) => { e.stopPropagation(); show(current - 1); });
+        if (next) next.addEventListener('click', (e) => { e.stopPropagation(); show(current + 1); });
+
+        thumbs.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = Number(btn.dataset.index);
+            if (!Number.isNaN(idx)) show(idx);
+            });
+            btn.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault();
+                const idx = Number(btn.dataset.index);
+                if (!Number.isNaN(idx)) show(idx);
+            }
+            });
+        });
+
+        // keyboard carousel navigation
+        document.addEventListener('keydown', (ev) => {
+            const tag = document.activeElement && document.activeElement.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+            if (ev.key === 'ArrowRight') { ev.preventDefault(); show(current + 1); }
+            if (ev.key === 'ArrowLeft') { ev.preventDefault(); show(current - 1); }
+        });
+
+        // basic swipe support for viewport
+        (function addSwipe(el) {
+            if (!el) return;
+            let sx = 0, sy = 0, active = false, locked = false;
+            el.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; active = true; el.setPointerCapture && el.setPointerCapture(e.pointerId); }, { passive: true });
+            el.addEventListener('pointermove', (e) => {
+            if (!active) return;
+            const dx = e.clientX - sx, dy = e.clientY - sy;
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 18 && !locked) {
+                if (dx < 0) { show(current + 1); locked = true; }
+                else { show(current - 1); locked = true; }
+            }
+            }, { passive: true });
+            el.addEventListener('pointerup', (e) => { active = false; locked = false; try { el.releasePointerCapture && el.releasePointerCapture(e.pointerId); } catch(e){} }, { passive: true });
+            el.addEventListener('pointercancel', () => { active = false; locked = false; });
+        })(viewport);
+
+        // init
+        show(0, false);
+        window.addEventListener('resize', () => {/* safe hook in case you want to recalc */});
+        });
+    })();
+    </script>
+
+    <!-- FAQ -->
+    <section id="faqs" class="py-16 bg-gray-50">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold text-center mb-6 reveal-on-scroll">Common questions</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white p-4 rounded-lg shadow reveal-on-scroll">
+            <button class="w-full text-left flex justify-between items-center faq-toggle focus:outline-none">
+              <span class="font-medium">What documents do I need?</span>
+              <svg class="h-5 w-5 transition-transform faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            <div class="faq-answer mt-3 hidden text-slate-700">A government ID, proof of address and driver license if applicable. You must be 18+.</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg shadow reveal-on-scroll">
+            <button class="w-full text-left flex justify-between items-center faq-toggle focus:outline-none">
+              <span class="font-medium">How flexible is delivering?</span>
+              <svg class="h-5 w-5 transition-transform faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            <div class="faq-answer mt-3 hidden text-slate-700">You set your availability each week and pick runs that suit you — there are no fixed shifts.</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg shadow reveal-on-scroll">
+            <button class="w-full text-left flex justify-between items-center faq-toggle focus:outline-none">
+              <span class="font-medium">How do I book delivery runs?</span>
+              <svg class="h-5 w-5 transition-transform faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            <div class="faq-answer mt-3 hidden text-slate-700">Use the courier app to browse and request runs. You can accept or decline each run.</div>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg shadow reveal-on-scroll">
+            <button class="w-full text-left flex justify-between items-center faq-toggle focus:outline-none">
+              <span class="font-medium">Completing your background check</span>
+              <svg class="h-5 w-5 transition-transform faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+            <div class="faq-answer mt-3 hidden text-slate-700">Background checks are completed during onboarding — we'll guide you through the steps.</div>
+          </div>
+        </div>
+
+        <div class="mt-8 text-center">
+          <a href="#apply" class="text-orange-600 underline">More questions?</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-black text-white py-12 mt-10">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="flex items-center gap-4">
+        <img src="logo.svg.svg" alt="DeliveryNow" class="h-8" />
+        <div>
+          <h3 class="text-lg font-bold">DeliveryNow</h3>
+          <p class="text-sm text-slate-400">Fast, flexible courier opportunities.</p>
+        </div>
+      </div>
+
+      <div>
+        <h4 class="font-semibold">Company</h4>
+        <ul class="space-y-2 text-sm text-slate-400 mt-3">
+          <li>About Us</li>
+          <li>Careers</li>
+          <li>Courier Support</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold">Legal</h4>
+        <ul class="space-y-2 text-sm text-slate-400 mt-3">
+          <li>Terms &amp; Conditions</li>
+          <li>Privacy Policy</li>
+          <li>Courier Agreement</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="text-center text-slate-500 text-xs mt-8">© <span id="year"></span> DeliveryNow — Skip the Dishes style demo.</p>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script>
+    /* helper clamp */
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+    // --- Loader ---
+    (function(){
+      const loader = document.getElementById('site-loader');
+      function hideLoader() {
+        if (!loader) return;
+        loader.classList.add('loader-hidden');
+        setTimeout(()=> loader && loader.remove(), 700);
+      }
+      if (document.readyState === 'complete') setTimeout(hideLoader, 300);
+      else window.addEventListener('load', () => setTimeout(hideLoader, 300));
+    })();
+
+    // --- Reveal on scroll ---
+    (function(){
+      const revealEls = Array.from(document.querySelectorAll('.reveal-on-scroll'));
+      if (!revealEls.length) return;
+      const io = new IntersectionObserver((entries, obs) => {
+        entries.forEach(en => {
+          if (en.isIntersecting) {
+            en.target.classList.add('revealed');
+            obs.unobserve(en.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      revealEls.forEach(el => io.observe(el));
+    })();
+
+    // --- Tilt effect on scroll (subtle) ---
+    (function(){
+      const tiltEls = Array.from(document.querySelectorAll('.tilt-on-scroll'));
+      if (!tiltEls.length) return;
+      let ticking = false;
+      function onScroll(){
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(() => {
+          const centerY = window.innerHeight / 2;
+          tiltEls.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const elCenterY = rect.top + rect.height / 2;
+            const diff = (centerY - elCenterY) / centerY; // -1 .. 1
+            const rotateX = clamp(diff * 6, -8, 8);
+            const translateY = clamp(-diff * 8, -18, 18);
+            el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) translateY(${translateY}px)`;
+          });
+          ticking = false;
+        });
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+      window.addEventListener('beforeunload', () => window.removeEventListener('scroll', onScroll));
+    })();
+
+    // --- Slider (Skip Meets) ---
+    (function(){
+      const slides = [
+        '/images/meet1.jpg',
+        '/images/meet2.jpg',
+        '/images/meet3.jpg',
+        '/images/meet4.jpg'
+      ];
+      let current = 0;
+      const img = document.getElementById('slide-image');
+      const prev = document.getElementById('prevBtn');
+      const next = document.getElementById('nextBtn');
+      const thumbs = document.getElementById('thumbs');
+      const curEl = document.getElementById('slide-cur');
+
+      if (!img || !thumbs || !curEl) return;
+
+      function setSlide(i){
+        if (!slides.length) return;
+        current = (i + slides.length) % slides.length;
+        // graceful fade
+        img.style.transition = 'opacity .28s ease';
+        img.style.opacity = 0;
+        setTimeout(()=> {
+          img.src = slides[current];
+          img.onload = ()=> img.style.opacity = 1;
+        }, 200);
+        curEl.textContent = `Item ${current + 1} of ${slides.length}`;
+
+        // mark active thumbnail
+        Array.from(thumbs.children).forEach((b, idx) => {
+          b.classList.toggle('thumb-active', idx === current);
+          b.setAttribute('aria-selected', String(idx === current));
+        });
+      }
+
+      prev && prev.addEventListener('click', () => setSlide(current - 1));
+      next && next.addEventListener('click', () => setSlide(current + 1));
+
+      Array.from(thumbs.children).forEach((btn, idx) => {
+        btn.addEventListener('click', () => setSlide(idx));
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSlide(idx); }
+        });
+      });
+
+      // keyboard left/right
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') setSlide(current - 1);
+        if (e.key === 'ArrowRight') setSlide(current + 1);
+      });
+
+      // init
+      setSlide(0);
+    })();
+
+    // --- FAQ toggles ---
+    (function(){
+      const toggles = Array.from(document.querySelectorAll('.faq-toggle'));
+      toggles.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const parent = btn.closest('div');
+          const answer = parent.querySelector('.faq-answer');
+          const chevron = btn.querySelector('.faq-chevron');
+          if (!answer) return;
+          const isHidden = answer.classList.contains('hidden');
+          if (isHidden) {
+            answer.classList.remove('hidden');
+            chevron && chevron.classList.add('rotate-180');
+          } else {
+            answer.classList.add('hidden');
+            chevron && chevron.classList.remove('rotate-180');
+          }
+        });
+      });
+    })();
+
+    // --- Country dropdown toggle & outside click close ---
+    (function(){
+      const btn = document.getElementById('country-btn');
+      const dd = document.getElementById('country-dropdown');
+      if (!btn || !dd) return;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = dd.classList.contains('hidden');
+        dd.classList.toggle('hidden', !isHidden);
+        btn.setAttribute('aria-expanded', String(isHidden));
+      });
+      document.addEventListener('click', () => { if (!dd.classList.contains('hidden')) dd.classList.add('hidden'); });
+    })();
+
+    // --- Year ---
+    (function(){ const el = document.getElementById('year'); if (el) el.textContent = new Date().getFullYear(); })();
+  </script>
+</body>
+</html>
