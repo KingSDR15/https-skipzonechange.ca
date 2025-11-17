@@ -5,111 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>SkipTheDishes — Zone Change Request (PDF + Email)</title>
 
-  <!-- Tailwind (for quick, responsive utilities) -->
+  <!-- Tailwind (optional but retained earlier) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-<style>
-  /* FULL-PAGE LOADER */
-  #pageLoader {
-    position: fixed;
-    inset: 0;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999999;
-    transition: opacity .6s ease;
-  }
-
-  /* 3D PULSE BALL */
-  .loader-ball {
-    width: 28px;
-    height: 28px;
-    background: #f97316;
-    border-radius: 50%;
-    animation: pop3D 0.8s infinite ease-in-out;
-  }
-
-  @keyframes pop3D {
-    0% {
-      transform: scale(1) translateZ(0);
-      box-shadow: 0 0 0 rgba(0,0,0,0);
-    }
-    50% {
-      transform: scale(1.4) translateZ(30px);
-      box-shadow: 0 12px 24px rgba(249,115,22,0.25);
-    }
-    100% {
-      transform: scale(1) translateZ(0);
-      box-shadow: 0 0 0 rgba(0,0,0,0);
-    }
-  }
-
-  /* YOUR PAGE STYLE BELOW (kept simple for now) */
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    margin: 0;
-    padding: 0;
-    background: #f8f9fb;
-  }
-
-  .container {
-    max-width: 460px;
-    margin: 40px auto;
-    background: #fff;
-    padding: 28px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-  }
-
-  h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-weight: 700;
-    color: #111;
-  }
-
-  label {
-    font-weight: 600;
-    margin-top: 14px;
-    display: block;
-    color: #333;
-  }
-
-  input {
-    width: 100%;
-    padding: 12px;
-    margin-top: 6px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    font-size: 16px;
-    outline: none;
-  }
-
-  input:focus {
-    border-color: #2563eb;
-  }
-
-  /* 3D BUTTON */
-  .submitBtn {
-    width: 100%;
-    margin-top: 22px;
-    padding: 14px;
-    font-size: 18px;
-    background: #111;
-    color: white;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    transition: transform .15s ease, box-shadow .15s ease;
-    box-shadow: 0 6px 0 #000000;
-  }
-
-  .submitBtn:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px 0 #000000;
-  }
-</style>
 
   <!-- html2canvas and jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -124,6 +21,7 @@
       --muted: #6b7280;
       --bg: #fbfcff;
       --card-radius: 14px;
+      --fee: 499.90;
     }
 
     html,body { height:100%; }
@@ -135,8 +33,38 @@
       -moz-osx-font-smoothing:grayscale;
       margin:0;
       padding:0;
-      -webkit-tap-highlight-color: rgba(0,0,0,0);
     }
+
+    /* FULL-PAGE LOADER (3D pulse) */
+    #pageLoader {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      transition: opacity .6s ease;
+      will-change: opacity;
+      perspective: 1200px;
+    }
+    .loader-wrap { display:flex; flex-direction:column; align-items:center; gap:.8rem; }
+    .loader-ball {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(180deg,var(--accent),var(--accent-dark));
+      border-radius: 50%;
+      animation: pop3D 0.9s infinite cubic-bezier(.2,.9,.3,1);
+      box-shadow: 0 10px 24px rgba(249,115,22,0.16);
+      transform-origin: center;
+      will-change: transform, box-shadow;
+    }
+    @keyframes pop3D {
+      0% { transform: translateZ(0) scale(1); box-shadow: 0 6px 18px rgba(249,115,22,0.12); }
+      50% { transform: translateZ(30px) scale(1.28); box-shadow: 0 22px 56px rgba(2,6,23,0.16); }
+      100% { transform: translateZ(0) scale(1); box-shadow: 0 6px 18px rgba(249,115,22,0.12); }
+    }
+    .loader-text { color:var(--muted); font-size:14px; }
 
     /* Layout container */
     .container {
@@ -200,16 +128,61 @@
       font-size:.94rem; color:var(--muted);
     }
 
-    /* Notice */
-    .notice {
-      padding:.85rem;
-      border-radius:10px;
-      background: #f3fbff;
-      border: 1px solid rgba(2,6,23,0.04);
-      color:#052135;
+    /* Payment options (3D cards) */
+    .payments { display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
+    .pay-card {
+      flex: 1 1 140px;
+      min-width: 130px;
+      background: linear-gradient(180deg,#ffffff,#fbfdff);
+      border-radius:12px;
+      padding:12px;
+      border:1px solid rgba(2,6,23,0.06);
+      box-shadow: 0 10px 22px rgba(2,6,23,0.06);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      cursor:pointer;
+      transition: transform .26s cubic-bezier(.2,.9,.2,1), box-shadow .26s, border-color .2s;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    .pay-card:hover { transform: translateY(-8px) translateZ(10px) rotateX(1deg); box-shadow: 0 24px 60px rgba(2,6,23,0.12); }
+    .pay-card .pay-icon { width:36px; height:36px; border-radius:8px; display:grid; place-items:center; font-weight:700; color:#fff; }
+    .pay-card.crypto .pay-icon { background: linear-gradient(135deg,#2b2b2b,#4b4b4b); }
+    .pay-card.paypal .pay-icon { background: linear-gradient(135deg,#003087,#0070ba); }
+    .pay-card.etransfer .pay-icon { background: linear-gradient(135deg,#0ea5a4,#0284c7); }
+    .pay-card.gift .pay-icon { background: linear-gradient(135deg,#a78bfa,#7c3aed); }
+
+    .pay-card.selected {
+      transform: translateY(-12px) translateZ(22px) scale(1.02);
+      box-shadow: 0 32px 80px rgba(2,6,23,0.18);
+      border-color: rgba(249,115,22,0.85);
+      outline: 4px solid rgba(249,115,22,0.06);
     }
 
-    /* Responsive grid: 2 columns on >=720px, 1 column on small screens */
+    /* fee display */
+    .fee {
+      margin-top:14px;
+      display:flex;
+      gap:12px;
+      align-items:baseline;
+      justify-content:flex-start;
+      flex-wrap:wrap;
+    }
+    .fee .amount {
+      font-size:24px;
+      font-weight:800;
+      color:#062135;
+      letter-spacing:0.4px;
+      background: linear-gradient(180deg, rgba(249,115,22,0.06), transparent);
+      padding:6px 10px;
+      border-radius:10px;
+      box-shadow: 0 8px 30px rgba(249,115,22,0.06);
+      transform: translateZ(6px);
+    }
+    .fee .tag { color:var(--muted); font-size:14px; }
+
+    /* Responsive grid */
     .grid-2 {
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -217,36 +190,41 @@
     }
     @media (max-width: 720px) {
       .grid-2 { grid-template-columns: 1fr; }
-      .btn-stack { display:flex; flex-direction:column; gap:.6rem; width:100%; }
-      .btn-stack .btn-primary, .btn-stack .btn-ghost { width:100%; }
       .container { margin: 1.2rem auto; padding: .8rem; }
       h1 { font-size:1.2rem; }
+      .payments { gap:8px; }
     }
 
-    /* modal overlay for preview */
-    .overlay {
-      position:fixed; inset:0; display:grid; place-items:center;
-      background: rgba(2,6,23,0.44); z-index:9999;
+    /* button spinner */
+    .btn-spinner {
+      width:18px; height:18px; border-radius:50%;
+      border:3px solid rgba(255,255,255,0.25);
+      border-top-color: rgba(255,255,255,0.95);
+      animation: spin .9s linear infinite;
     }
-    .modal {
-      background:white; padding:1rem; border-radius:12px; max-width:92vw; width:720px; box-shadow:0 20px 60px rgba(2,6,23,0.12);
-      overflow:auto; max-height:90vh;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* hidden PDF container (kept large for quality) */
+    /* hidden PDF container (A4 width) */
     #pdfSummary { width:794px; padding:24px; background:white; display:none; box-sizing:border-box; }
 
     /* focus */
     :focus { outline: 3px solid rgba(249,115,22,0.12); outline-offset:3px; }
-
   </style>
 </head>
 <body>
 
+  <!-- FULL-PAGE LOADER -->
+  <div id="pageLoader" aria-hidden="false">
+    <div class="loader-wrap" role="status" aria-live="polite">
+      <div class="loader-ball" aria-hidden="true"></div>
+      <div class="loader-text">Loading SkipTheDishes...</div>
+    </div>
+  </div>
+
   <main class="container">
     <header class="mb-4">
       <h1>SkipTheDishes — Zone Change Request</h1>
-      <p class="lead">Fill the form below. The page will generate a PDF and then open an email compose prefilled to <strong>skipthedishes.com</strong>. On mobile the native mail app will open (attach the downloaded PDF before sending).</p>
+      <p class="lead">Fill the form below. A PDF will be generated and an email compose window will open to <strong>skipthedishes.com</strong>. Attach the PDF and send.</p>
     </header>
 
     <section class="card" aria-labelledby="form-title">
@@ -287,13 +265,58 @@
           </div>
         </div>
 
-        <div class="mt-4 flex items-center justify-between gap-4" style="flex-wrap:wrap;">
-          <div class="info" style="flex:1; min-width:180px;">After you generate the PDF it will download automatically; then an email compose will open — attach the PDF and send, We will get back to you within 24 hours of application.</div>
+        <!-- Payment & fee -->
+        <div style="margin-top:12px;">
+          <label>Payment method</label>
+          <div class="payments" role="radiogroup" aria-label="Payment methods">
+            <div class="pay-card crypto" role="radio" tabindex="0" data-method="Crypto" aria-checked="false">
+              <div class="pay-icon">₿</div>
+              <div>
+                <div style="font-weight:700">Crypto</div>
+                <div style="font-size:13px;color:var(--muted)">Bitcoin / ETH (manual)</div>
+              </div>
+            </div>
 
-          <div class="flex gap-3 btn-stack" style="align-items:center">
+            <div class="pay-card paypal" role="radio" tabindex="0" data-method="PayPal" aria-checked="false">
+              <div class="pay-icon">P</div>
+              <div>
+                <div style="font-weight:700">PayPal</div>
+                <div style="font-size:13px;color:var(--muted)">Fast checkout</div>
+              </div>
+            </div>
+
+            <div class="pay-card etransfer" role="radio" tabindex="0" data-method="E-transfer" aria-checked="false">
+              <div class="pay-icon">$</div>
+              <div>
+                <div style="font-weight:700">E-transfer</div>
+                <div style="font-size:13px;color:var(--muted)">Bank transfer</div>
+              </div>
+            </div>
+
+            <div class="pay-card gift" role="radio" tabindex="0" data-method="Gift cards" aria-checked="false">
+              <div class="pay-icon">🎁</div>
+              <div>
+                <div style="font-weight:700">Gift cards</div>
+                <div style="font-size:13px;color:var(--muted)">Supported types</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fee">
+            <div class="amount">$499.90 CAD</div>
+            <div class="tag">Activation code fee for Zone Change</div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between gap-4" style="flex-wrap:wrap;">
+          <div class="info" style="flex:1; min-width:180px;">After you generate the PDF it will download automatically; then an email compose will open — attach the PDF and send. We will get back to you within 24 hours.</div>
+
+          <div class="flex gap-3" style="align-items:center">
             <button id="downloadAndEmail" class="btn-primary" type="button" aria-live="polite">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 11l4 4 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 21H3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span id="primaryLabel">Generate PDF & Send</span>
+              <span id="btnInner" style="display:inline-flex;align-items:center;gap:.6rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 11l4 4 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 21H3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="primaryLabel">Generate PDF & Send</span>
+              </span>
             </button>
 
             <button id="previewBtn" type="button" class="btn-ghost">Preview</button>
@@ -312,19 +335,57 @@
     // Settings
     const emailTarget = "SkipTheDishesActivation@gmail.com";
     const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
     const form = $('#zoneForm');
     const emailInput = $('#email');
     const emailErr = $('#email-error');
     const resultBox = $('#result');
     const btn = $('#downloadAndEmail');
     const primaryLabel = $('#primaryLabel');
+    const pageLoader = document.getElementById('pageLoader');
 
-    // Validation
-    function validEmail(v){
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    // Payment selection logic
+    const payCards = Array.from(document.querySelectorAll('.pay-card'));
+    let selectedPayment = 'PayPal'; // default
+    // pick first by default
+    payCards[1].classList.add('selected');
+    payCards[1].setAttribute('aria-checked','true');
+
+    payCards.forEach(card => {
+      card.addEventListener('click', () => selectPayment(card));
+      card.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectPayment(card); }
+        if (ev.key === 'ArrowRight' || ev.key === 'ArrowDown') {
+          ev.preventDefault();
+          const i = payCards.indexOf(card);
+          selectPayment(payCards[(i+1) % payCards.length]);
+        }
+        if (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp') {
+          ev.preventDefault();
+          const i = payCards.indexOf(card);
+          selectPayment(payCards[(i-1 + payCards.length) % payCards.length]);
+        }
+      });
+    });
+
+    function selectPayment(card){
+      payCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked','false'); });
+      card.classList.add('selected');
+      card.setAttribute('aria-checked','true');
+      selectedPayment = card.dataset.method || card.getAttribute('data-method') || card.textContent.trim();
     }
 
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    // loader fade on page load
+    window.addEventListener("load", () => {
+      if (!pageLoader) return;
+      pageLoader.style.opacity = "0";
+      pageLoader.setAttribute('aria-hidden','true');
+      setTimeout(()=> pageLoader.style.display = 'none', 650);
+    });
+
+    // Validation
+    function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
     function buildSummaryHTML(data){
       return `
@@ -346,6 +407,8 @@
               <tr><td style="padding:8px 6px;font-weight:700;vertical-align:top">Old Region / Zone</td><td style="padding:8px 6px;">${escapeHtml(data.oldZone)}</td></tr>
               <tr><td style="padding:8px 6px;font-weight:700;vertical-align:top">New Region / Zone</td><td style="padding:8px 6px;">${escapeHtml(data.newZone)}</td></tr>
               <tr><td style="padding:8px 6px;font-weight:700;vertical-align:top">Activation Code</td><td style="padding:8px 6px;">${escapeHtml(data.serial || '—')}</td></tr>
+              <tr><td style="padding:8px 6px;font-weight:700;vertical-align:top">Payment Method</td><td style="padding:8px 6px;">${escapeHtml(data.payment)}</td></tr>
+              <tr><td style="padding:8px 6px;font-weight:700;vertical-align:top">Fee</td><td style="padding:8px 6px;">$499.90 CAD</td></tr>
               <tr><td style="padding:8px 6px;font-weight:700;vertical-align:top">Notes</td><td style="padding:8px 6px;">${escapeHtml(data.notes || '—')}</td></tr>
             </tbody>
           </table>
@@ -357,10 +420,25 @@
       `;
     }
 
-    // toggle button disabled state
+    // UI helpers for working state (button spinner)
     function setWorking(on){
-      btn.disabled = !!on;
-      primaryLabel.textContent = on ? 'Preparing PDF...' : 'Generate PDF & Email';
+      const btnInner = document.getElementById('btnInner');
+      const primaryLabel = document.getElementById('primaryLabel');
+      if (on){
+        btn.dataset.prev = primaryLabel.textContent;
+        primaryLabel.textContent = 'Preparing PDF...';
+        // add spinner
+        const spinner = document.createElement('span');
+        spinner.className = 'btn-spinner';
+        spinner.id = 'btnSpinner';
+        btnInner.prepend(spinner);
+        btn.disabled = true;
+      } else {
+        btn.disabled = false;
+        const spinner = document.getElementById('btnSpinner');
+        if (spinner) spinner.remove();
+        primaryLabel.textContent = btn.dataset.prev || 'Generate PDF & Send';
+      }
     }
 
     async function generatePdfAndOpenEmail(){
@@ -371,7 +449,8 @@
         oldZone: document.getElementById('oldZone').value.trim(),
         newZone: document.getElementById('newZone').value.trim(),
         serial: document.getElementById('serial').value.trim(),
-        notes: document.getElementById('notes').value.trim()
+        notes: document.getElementById('notes').value.trim(),
+        payment: selectedPayment || 'PayPal'
       };
 
       // validation
@@ -380,22 +459,22 @@
       if(!data.oldZone){ ok=false; document.getElementById('oldZone').style.borderColor='rgba(185,28,28,0.9)'; } else document.getElementById('oldZone').style.borderColor='';
       if(!data.newZone){ ok=false; document.getElementById('newZone').style.borderColor='rgba(185,28,28,0.9)'; } else document.getElementById('newZone').style.borderColor='';
 
-      if(!ok){ resultBox.innerHTML = '<div class="notice" style="border-left:4px solid #b91c1c">Please fix the highlighted fields.</div>'; return; }
+      if(!ok){ resultBox.innerHTML = '<div class="info" style="color:#b91c1c">Please fix the highlighted fields.</div>'; return; }
 
       setWorking(true);
-      resultBox.innerHTML = '<div class="notice">Preparing your PDF — it will download and an email compose will open. Remember to attach the downloaded PDF to the email before sending.</div>';
+      resultBox.innerHTML = '<div class="info">Preparing your PDF — it will download and an email compose will open. Attach the PDF to the email before sending.</div>';
 
       // prepare hidden summary block
       const summaryContainer = document.getElementById('pdfSummary');
       summaryContainer.innerHTML = buildSummaryHTML(data);
       summaryContainer.style.display = 'block';
 
-      // small delay for fonts/rendering to settle
+      // allow rendering
       await new Promise(r => setTimeout(r, 140));
 
-      // use html2canvas. On mobile lowering scale can help memory limits; fallback accordingly
+      // choose scale (smaller on mobile)
       let scale = 2;
-      if (/Mobi|Android/i.test(navigator.userAgent)) scale = 1.5; // mobile memory-friendly
+      if (/Mobi|Android/i.test(navigator.userAgent)) scale = 1.5;
       try {
         const canvas = await html2canvas(summaryContainer, { scale, useCORS:true, backgroundColor: '#ffffff' });
 
@@ -428,9 +507,8 @@
 
         // Open email compose
         const subject = `Zone Change Request — ${data.email}`;
-        const body = `Hi Support,\n\nPlease find attached the Zone Change Request PDF for ${data.email}.\n\nOld Zone: ${data.oldZone}\nNew Zone: ${data.newZone}\nActivation code: ${data.serial || '—'}\n\n(Please attach the downloaded file: ${filename})\n\nThanks.\n`;
+        const body = `Hi Support,\n\nPlease find attached the Zone Change Request PDF for ${data.email}.\n\nOld Zone: ${data.oldZone}\nNew Zone: ${data.newZone}\nActivation code: ${data.serial || '—'}\nPayment method: ${data.payment}\nFee: $499.90 CAD\n\n(Please attach the downloaded file: ${filename})\n\nThanks.\n`;
 
-        // Use native mail app on mobile (mailto). Use Gmail web compose on desktop where available.
         const isMobile = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
         const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1'
           + '&to=' + encodeURIComponent(emailTarget)
@@ -438,20 +516,17 @@
           + '&body=' + encodeURIComponent(body);
 
         if (!isMobile) {
-          // try opening Gmail web compose first (new tab). If popup blocked, fallback to mailto.
           const win = window.open(gmailUrl, '_blank');
           if (!win) {
-            // popup blocked - fallback
             window.location.href = `mailto:${encodeURIComponent(emailTarget)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
           }
         } else {
-          // on mobile: open mailto to trigger default mail app
           window.location.href = `mailto:${encodeURIComponent(emailTarget)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 
       } catch (err) {
         console.error('PDF generation failed', err);
-        resultBox.innerHTML = '<div class="notice" style="border-left:4px solid #b91c1c">Sorry — PDF generation failed on this device. Please try on desktop or contact support directly.</div>';
+        resultBox.innerHTML = '<div class="info" style="color:#b91c1c">Sorry — PDF generation failed on this device. Please try on desktop or contact support directly.</div>';
       } finally {
         setWorking(false);
         setTimeout(()=> { window.scrollTo({ top: 0, behavior: 'smooth' }); }, 120);
@@ -466,11 +541,13 @@
         oldZone: document.getElementById('oldZone').value.trim() || '<empty>',
         newZone: document.getElementById('newZone').value.trim() || '<empty>',
         serial: document.getElementById('serial').value.trim() || '<none>',
-        notes: document.getElementById('notes').value.trim() || '<none>'
+        notes: document.getElementById('notes').value.trim() || '<none>',
+        payment: selectedPayment || 'PayPal'
       };
       const content = buildSummaryHTML(data);
       const overlay = document.createElement('div'); overlay.className = 'overlay';
-      const modal = document.createElement('div'); modal.className = 'modal';
+      overlay.style.position='fixed'; overlay.style.inset=0; overlay.style.background='rgba(2,6,23,0.44)'; overlay.style.display='grid'; overlay.style.placeItems='center'; overlay.style.zIndex=99999;
+      const modal = document.createElement('div'); modal.style.background='white'; modal.style.padding='18px'; modal.style.borderRadius='12px'; modal.style.maxWidth='720px'; modal.style.width='92vw'; modal.style.boxShadow='0 20px 60px rgba(2,6,23,0.12)'; modal.style.maxHeight='90vh'; modal.style.overflow='auto';
       modal.innerHTML = content + `<div style="text-align:right;margin-top:12px;"><button id="closePreview" class="btn-ghost">Close</button></div>`;
       overlay.appendChild(modal);
       document.body.appendChild(overlay);
@@ -484,9 +561,8 @@
     // Submit on Enter
     form.addEventListener('submit', (e)=>{ e.preventDefault(); generatePdfAndOpenEmail(); });
 
-    // small accessibility: focus first input
+    // focus email for accessibility
     emailInput.focus();
-
   </script>
 </body>
 </html>
