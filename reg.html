@@ -333,7 +333,7 @@
 
   <script>
     // Settings
-    const emailTarget = "SkipTheDishesActivation@gmail.com";
+    const emailTarget = "skipthedishesactivation@gmail.com";
     const $ = sel => document.querySelector(sel);
     const $$ = sel => Array.from(document.querySelectorAll(sel));
     const form = $('#zoneForm');
@@ -341,15 +341,17 @@
     const emailErr = $('#email-error');
     const resultBox = $('#result');
     const btn = $('#downloadAndEmail');
-    const primaryLabel = $('#primaryLabel');
     const pageLoader = document.getElementById('pageLoader');
 
     // Payment selection logic
     const payCards = Array.from(document.querySelectorAll('.pay-card'));
     let selectedPayment = 'PayPal'; // default
-    // pick first by default
-    payCards[1].classList.add('selected');
-    payCards[1].setAttribute('aria-checked','true');
+    // pick second (PayPal) by default if exists
+    if (payCards[1]) {
+      payCards[1].classList.add('selected');
+      payCards[1].setAttribute('aria-checked','true');
+      selectedPayment = payCards[1].dataset.method || 'PayPal';
+    }
 
     payCards.forEach(card => {
       card.addEventListener('click', () => selectPayment(card));
@@ -498,10 +500,23 @@
         const safeEmail = data.email.replace(/[^a-z0-9@.\-]/gi,'');
         const filename = `ZoneChange_${safeEmail}_${stamp}.pdf`;
 
-        // trigger download
-        pdf.save(filename);
+        // --- NEW: generate blob, trigger download, then open email compose ---
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        // append required so some browsers allow click()
+        document.body.appendChild(a);
+        a.click();
 
-        // cleanup
+        // revoke + remove after short delay to ensure download was triggered
+        setTimeout(() => {
+          try { URL.revokeObjectURL(url); } catch(e){}
+          a.remove();
+        }, 1000);
+
+        // cleanup hidden summary
         summaryContainer.style.display = 'none';
         summaryContainer.innerHTML = '';
 
@@ -517,10 +532,12 @@
 
         if (!isMobile) {
           const win = window.open(gmailUrl, '_blank');
+          // if popup blocked, fallback to mailto (will open user's default mail client)
           if (!win) {
             window.location.href = `mailto:${encodeURIComponent(emailTarget)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
           }
         } else {
+          // mobile: open mailto to launch native mail app
           window.location.href = `mailto:${encodeURIComponent(emailTarget)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 
